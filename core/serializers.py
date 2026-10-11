@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from core.models import ORGANIZATION_ROLE_CHOICES, Membership, StaffMember
+from core.models import ORGANIZATION_ROLE_CHOICES, Customer, Membership, StaffMember
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -81,3 +81,10 @@ class AcceptInviteSerializer(serializers.Serializer):
 
 class RoleUpdateSerializer(serializers.Serializer):
     role = serializers.ChoiceField(choices=ORGANIZATION_ROLE_CHOICES)
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = ['id', 'name', 'surname', 'title', 'email', 'phone', 'company', 'staff_member', 'added_date']
+        read_only_fields = ['added_date']
