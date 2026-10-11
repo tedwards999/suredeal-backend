@@ -3,6 +3,7 @@ from django.contrib import admin
 from core.models import (
     Company,
     Customer,
+    Event,
     EventType,
     Invoice,
     InvoiceLineItem,
@@ -23,3 +24,4 @@ admin.site.register(Quote)
 admin.site.register(QuoteLineItem)
 admin.site.register(Invoice)
 admin.site.register(InvoiceLineItem)
+admin.site.register(Event)

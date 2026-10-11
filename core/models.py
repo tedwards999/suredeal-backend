@@ -111,3 +111,13 @@ class InvoiceLineItem(models.Model):
 
     def __str__(self):
         return f'{self.quantity} x {self.product} on {self.invoice}'
+
+
+class Event(models.Model):
+    event_date = models.DateField()
+    event_type = models.ForeignKey(EventType, on_delete=models.CASCADE)
+    quote = models.ForeignKey(Quote, on_delete=models.CASCADE, null=True, blank=True)
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE, null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.event_type} on {self.quote or self.invoice}'
