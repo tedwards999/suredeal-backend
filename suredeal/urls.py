@@ -19,6 +19,7 @@ from django.urls import include, path
 
 from core.views import (
     AcceptInviteView,
+    BillingPortalView,
     CustomerDetailView,
     CustomerListCreateView,
     DashboardMetricsView,
@@ -29,6 +30,7 @@ from core.views import (
     MembershipRoleView,
     OrganizationInviteView,
     OrganizationMembersView,
+    PaddleWebhookView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     InvoicePDFView,
@@ -73,4 +75,6 @@ urlpatterns = [
     path('api/invoices/<int:pk>/pdf/', InvoicePDFView.as_view(), name='invoice_pdf'),
     path('api/public/quotes/<str:token>/pdf/', PublicQuotePDFView.as_view(), name='public_quote_pdf'),
     path('api/public/invoices/<str:token>/pdf/', PublicInvoicePDFView.as_view(), name='public_invoice_pdf'),
+    path('api/paddle/webhook/', PaddleWebhookView.as_view(), name='paddle_webhook'),
+    path('api/billing/portal/', BillingPortalView.as_view(), name='billing_portal'),
 ]

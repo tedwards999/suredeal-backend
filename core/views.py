@@ -1,21 +1,29 @@
+import json
+import os
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
+from django.utils.decorators import method_decorator
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.views import View
+from django.views.decorators.csrf import csrf_exempt
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
+from paddle_billing.Resources.CustomerPortalSessions.Operations import CreateCustomerPortalSession
 from rest_framework import generics, status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Customer, Event, EventType, Invoice, Membership, Organization, Product, Quote
+from core.models import BillingCustomer, Customer, Event, EventType, Invoice, Membership, Organization, Product, Quote
+from core.paddle_client import get_paddle_client
+from core.paddle_webhooks import handle_event, verify_signature
 from core.pdf import build_invoice_pdf, build_quote_pdf
 from core.serializers import (
     AcceptInviteSerializer,
@@ -401,3 +409,48 @@ class PublicInvoicePDFView(APIView):
         response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="invoice-{invoice.pk}.pdf"'
         return response
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class PaddleWebhookView(View):
+    """
+    Plain Django view, not DRF: signature verification needs the exact raw
+    request body, and DRF's content negotiation/parsing gets in the way of
+    that. AllowAny-equivalent by design -- Paddle authenticates via the
+    signature, not a user token.
+    """
+
+    def post(self, request):
+        try:
+            secret = os.environ['PADDLE_WEBHOOK_SECRET']
+            if not verify_signature(request, secret):
+                raise ValueError('signature verification failed')
+            payload = json.loads(request.body)
+            handle_event(payload.get('event_type'), payload.get('data') or {})
+        except Exception:
+            # Any failure here (bad signature, malformed body, handler error)
+            # gets the same non-2xx so Paddle retries the delivery -- a 2xx
+            # marks it delivered and Paddle never sends it again.
+            return JsonResponse({'error': 'Webhook processing failed'}, status=400)
+        return JsonResponse({'received': True})
+
+
+class BillingPortalView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        organization = get_organization_for_user(request.user)
+        if organization is None:
+            return Response({'detail': 'No organization found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+        billing_customer = BillingCustomer.objects.filter(organization=organization).first()
+        if billing_customer is None:
+            return Response(
+                {'detail': 'No billing account found for this organization.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+        paddle = get_paddle_client()
+        session = paddle.customer_portal_sessions.create(
+            billing_customer.paddle_customer_id,
+            CreateCustomerPortalSession(),
+        )
+        return Response({'portal_url': session.urls.general.overview})
