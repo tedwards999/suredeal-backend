@@ -27,6 +27,8 @@ from core.views import (
     OrganizationMembersView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
+    ProductDetailView,
+    ProductListCreateView,
     RegisterView,
 )
 
@@ -43,4 +45,6 @@ urlpatterns = [
     path('api/organization/members/<int:membership_id>/role/', MembershipRoleView.as_view(), name='membership_role'),
     path('api/customers/', CustomerListCreateView.as_view(), name='customer_list_create'),
     path('api/customers/<int:pk>/', CustomerDetailView.as_view(), name='customer_detail'),
+    path('api/products/', ProductListCreateView.as_view(), name='product_list_create'),
+    path('api/products/<int:pk>/', ProductDetailView.as_view(), name='product_detail'),
 ]
