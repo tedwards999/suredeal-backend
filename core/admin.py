@@ -7,6 +7,8 @@ from core.models import (
     EventType,
     Invoice,
     InvoiceLineItem,
+    Membership,
+    Organization,
     Product,
     Quote,
     QuoteLineItem,
@@ -25,3 +27,5 @@ admin.site.register(QuoteLineItem)
 admin.site.register(Invoice)
 admin.site.register(InvoiceLineItem)
 admin.site.register(Event)
+admin.site.register(Organization)
+admin.site.register(Membership)
