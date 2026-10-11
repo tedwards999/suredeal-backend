@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 from rest_framework import serializers
 
 from core.models import (
@@ -115,10 +116,40 @@ class QuoteLineItemSerializer(serializers.ModelSerializer):
 
 class EventSerializer(serializers.ModelSerializer):
     event_type_name = serializers.CharField(source='event_type.name', read_only=True)
+    event_date = serializers.DateField(required=False)
+    document = serializers.SerializerMethodField()
+    customer_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Event
-        fields = ['id', 'event_date', 'event_type', 'event_type_name']
+        fields = [
+            'id', 'event_date', 'event_type', 'event_type_name',
+            'quote', 'invoice', 'document', 'customer_name',
+        ]
+
+    def get_document(self, obj):
+        if obj.quote_id:
+            return f'QT-{obj.quote_id}'
+        if obj.invoice_id:
+            return f'INV-{obj.invoice_id}'
+        return None
+
+    def get_customer_name(self, obj):
+        customer = obj.quote.customer if obj.quote_id else obj.invoice.customer if obj.invoice_id else None
+        return f'{customer.name} {customer.surname}' if customer else None
+
+    def validate(self, data):
+        quote = data.get('quote')
+        invoice = data.get('invoice')
+        if not quote and not invoice:
+            raise serializers.ValidationError('Either quote or invoice must be set.')
+        if quote and invoice:
+            raise serializers.ValidationError('An event cannot be linked to both a quote and an invoice.')
+        return data
+
+    def create(self, validated_data):
+        validated_data.setdefault('event_date', timezone.now().date())
+        return super().create(validated_data)
 
 
 class QuoteSerializer(serializers.ModelSerializer):
