@@ -88,3 +88,26 @@ class QuoteLineItem(models.Model):
 
     def __str__(self):
         return f'{self.quantity} x {self.product} on {self.quote}'
+
+
+class Invoice(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    source_quote = models.ForeignKey(Quote, on_delete=models.SET_NULL, null=True, blank=True)
+    date_issued = models.DateField(auto_now_add=True)
+    due_date = models.DateField()
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f'Invoice #{self.pk} for {self.customer}'
+
+
+class InvoiceLineItem(models.Model):
+    invoice = models.ForeignKey(Invoice, on_delete=models.CASCADE)
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField(default=1)
+    line_total = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    discount = models.DecimalField(max_digits=5, decimal_places=2, default=0.00)
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f'{self.quantity} x {self.product} on {self.invoice}'

@@ -1,6 +1,17 @@
 from django.contrib import admin
 
-from core.models import Company, Customer, EventType, Product, Quote, QuoteLineItem, Region, StaffMember
+from core.models import (
+    Company,
+    Customer,
+    EventType,
+    Invoice,
+    InvoiceLineItem,
+    Product,
+    Quote,
+    QuoteLineItem,
+    Region,
+    StaffMember,
+)
 
 admin.site.register(EventType)
 admin.site.register(Region)
@@ -10,3 +21,5 @@ admin.site.register(Customer)
 admin.site.register(Product)
 admin.site.register(Quote)
 admin.site.register(QuoteLineItem)
+admin.site.register(Invoice)
+admin.site.register(InvoiceLineItem)
