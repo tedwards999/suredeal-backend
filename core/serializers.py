@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from core.models import StaffMember
+from core.models import ORGANIZATION_ROLE_CHOICES, Membership, StaffMember
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -48,3 +48,32 @@ class PasswordResetConfirmSerializer(serializers.Serializer):
     uid = serializers.CharField()
     token = serializers.CharField()
     new_password = serializers.CharField(write_only=True, validators=[validate_password])
+
+
+class InviteCreateSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    role = serializers.ChoiceField(choices=ORGANIZATION_ROLE_CHOICES)
+
+    def validate_email(self, value):
+        organization = self.context['organization']
+        if Membership.objects.filter(organization=organization, email=value).exists():
+            raise serializers.ValidationError('This email has already been invited.')
+        return value
+
+
+class MembershipSerializer(serializers.ModelSerializer):
+    role_display = serializers.CharField(source='get_role_display', read_only=True)
+    is_pending = serializers.BooleanField(read_only=True)
+    is_expired = serializers.BooleanField(read_only=True)
+    name = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Membership
+        fields = ['id', 'email', 'name', 'role', 'role_display', 'is_pending', 'is_expired', 'invited_at', 'accepted_at']
+
+    def get_name(self, obj):
+        return obj.user.get_full_name() if obj.user else ''
+
+
+class AcceptInviteSerializer(serializers.Serializer):
+    token = serializers.CharField()
