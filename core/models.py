@@ -7,6 +7,10 @@ from django.utils import timezone
 from django_countries.fields import CountryField
 
 
+def generate_invite_token():
+    return secrets.token_urlsafe(32)
+
+
 class EventType(models.Model):
     name = models.CharField(max_length=255)
 
@@ -77,6 +81,7 @@ class Quote(models.Model):
     next_follow_up = models.DateField()
     expiry_date = models.DateField()
     notes = models.TextField(blank=True, null=True)
+    public_token = models.CharField(max_length=64, unique=True, default=generate_invite_token, editable=False)
 
     def __str__(self):
         return f'Quote #{self.pk} for {self.customer}'
@@ -100,6 +105,7 @@ class Invoice(models.Model):
     date_issued = models.DateField(auto_now_add=True)
     due_date = models.DateField()
     notes = models.TextField(blank=True, null=True)
+    public_token = models.CharField(max_length=64, unique=True, default=generate_invite_token, editable=False)
 
     def __str__(self):
         return f'Invoice #{self.pk} for {self.customer}'
@@ -132,10 +138,6 @@ ORGANIZATION_ROLE_CHOICES = [
     ('sales_representative', 'Sales representative'),
     ('viewer', 'Viewer'),
 ]
-
-
-def generate_invite_token():
-    return secrets.token_urlsafe(32)
 
 
 class Organization(models.Model):
