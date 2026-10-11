@@ -20,6 +20,7 @@ from django.urls import include, path
 from core.views import (
     AcceptInviteView,
     LoginView,
+    MembershipRoleView,
     OrganizationInviteView,
     OrganizationMembersView,
     PasswordResetConfirmView,
@@ -37,4 +38,5 @@ urlpatterns = [
     path('api/organization/members/', OrganizationMembersView.as_view(), name='organization_members'),
     path('api/organization/invites/', OrganizationInviteView.as_view(), name='organization_invite'),
     path('api/organization/invites/accept/', AcceptInviteView.as_view(), name='organization_invite_accept'),
+    path('api/organization/members/<int:membership_id>/role/', MembershipRoleView.as_view(), name='membership_role'),
 ]

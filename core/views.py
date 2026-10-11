@@ -20,6 +20,7 @@ from core.serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     RegisterSerializer,
+    RoleUpdateSerializer,
 )
 
 
@@ -147,5 +148,26 @@ class AcceptInviteView(APIView):
             return Response({'detail': 'This invite has expired.'}, status=status.HTTP_400_BAD_REQUEST)
         membership.user = request.user
         membership.accepted_at = timezone.now()
+        membership.save()
+        return Response(MembershipSerializer(membership).data)
+
+
+class MembershipRoleView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request, membership_id):
+        organization = get_organization_for_user(request.user)
+        if organization is None:
+            return Response({'detail': 'No organization found for this account.'}, status=status.HTTP_404_NOT_FOUND)
+        if organization.owner_id != request.user.id:
+            return Response({'detail': 'Only the workspace owner can change member roles.'}, status=status.HTTP_403_FORBIDDEN)
+        membership = Membership.objects.filter(pk=membership_id, organization=organization).first()
+        if membership is None:
+            return Response({'detail': 'Member not found.'}, status=status.HTTP_404_NOT_FOUND)
+        if membership.is_pending:
+            return Response({'detail': 'Only active members\' roles can be changed.'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = RoleUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        membership.role = serializer.validated_data['role']
         membership.save()
         return Response(MembershipSerializer(membership).data)
