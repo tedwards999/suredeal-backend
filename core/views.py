@@ -6,15 +6,16 @@ from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from knox.models import AuthToken
 from knox.views import LoginView as KnoxLoginView
-from rest_framework import status
+from rest_framework import generics, status
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Membership, Organization
+from core.models import Customer, Membership, Organization
 from core.serializers import (
     AcceptInviteSerializer,
+    CustomerSerializer,
     InviteCreateSerializer,
     MembershipSerializer,
     PasswordResetConfirmSerializer,
@@ -171,3 +172,15 @@ class MembershipRoleView(APIView):
         membership.role = serializer.validated_data['role']
         membership.save()
         return Response(MembershipSerializer(membership).data)
+
+
+class CustomerListCreateView(generics.ListCreateAPIView):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class CustomerDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = [IsAuthenticated]
