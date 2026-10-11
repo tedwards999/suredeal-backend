@@ -18,7 +18,10 @@ from django.contrib import admin
 from django.urls import include, path
 
 from core.views import (
+    AcceptInviteView,
     LoginView,
+    OrganizationInviteView,
+    OrganizationMembersView,
     PasswordResetConfirmView,
     PasswordResetRequestView,
     RegisterView,
@@ -31,4 +34,7 @@ urlpatterns = [
     path('api/auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset_request'),
     path('api/auth/password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
     path('api/auth/', include('knox.urls')),
+    path('api/organization/members/', OrganizationMembersView.as_view(), name='organization_members'),
+    path('api/organization/invites/', OrganizationInviteView.as_view(), name='organization_invite'),
+    path('api/organization/invites/accept/', AcceptInviteView.as_view(), name='organization_invite_accept'),
 ]
