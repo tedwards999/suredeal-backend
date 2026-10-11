@@ -1,5 +1,9 @@
+import secrets
+from datetime import timedelta
+
 from django.contrib.auth.models import User
 from django.db import models
+from django.utils import timezone
 from django_countries.fields import CountryField
 
 
@@ -121,3 +125,46 @@ class Event(models.Model):
 
     def __str__(self):
         return f'{self.event_type} on {self.quote or self.invoice}'
+
+
+ORGANIZATION_ROLE_CHOICES = [
+    ('sales_manager', 'Sales manager'),
+    ('sales_representative', 'Sales representative'),
+    ('viewer', 'Viewer'),
+]
+
+
+def generate_invite_token():
+    return secrets.token_urlsafe(32)
+
+
+class Organization(models.Model):
+    name = models.CharField(max_length=255)
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='owned_organizations')
+
+    def __str__(self):
+        return self.name
+
+
+class Membership(models.Model):
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, related_name='memberships')
+    email = models.EmailField()
+    role = models.CharField(max_length=30, choices=ORGANIZATION_ROLE_CHOICES)
+    invite_token = models.CharField(max_length=64, unique=True, default=generate_invite_token, editable=False)
+    invited_at = models.DateTimeField(auto_now_add=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('organization', 'email')
+
+    @property
+    def is_pending(self):
+        return self.user_id is None
+
+    @property
+    def is_expired(self):
+        return self.is_pending and timezone.now() > self.invited_at + timedelta(days=7)
+
+    def __str__(self):
+        return f'{self.email} ({self.get_role_display()}) at {self.organization}'
