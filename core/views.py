@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
+from django.http import HttpResponse
 from django.utils import timezone
 from django.utils.encoding import force_bytes, force_str
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
@@ -15,6 +16,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from core.models import Customer, Event, EventType, Invoice, Membership, Organization, Product, Quote
+from core.pdf import build_invoice_pdf, build_quote_pdf
 from core.serializers import (
     AcceptInviteSerializer,
     CustomerSerializer,
@@ -343,3 +345,59 @@ class PublicInvoiceView(APIView):
         viewed_type, _ = EventType.objects.get_or_create(name='Viewed')
         Event.objects.create(invoice=invoice, event_type=viewed_type, event_date=timezone.now().date())
         return Response(InvoiceSerializer(invoice).data)
+
+
+class QuotePDFView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        quote = Quote.objects.filter(pk=pk).first()
+        if quote is None:
+            return Response({'detail': 'Quote not found.'}, status=status.HTTP_404_NOT_FOUND)
+        buffer = build_quote_pdf(quote)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="quote-{quote.pk}.pdf"'
+        return response
+
+
+class InvoicePDFView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        invoice = Invoice.objects.filter(pk=pk).first()
+        if invoice is None:
+            return Response({'detail': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+        buffer = build_invoice_pdf(invoice)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice-{invoice.pk}.pdf"'
+        return response
+
+
+class PublicQuotePDFView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        quote = Quote.objects.filter(public_token=token).first()
+        if quote is None:
+            return Response({'detail': 'Quote not found.'}, status=status.HTTP_404_NOT_FOUND)
+        downloaded_type, _ = EventType.objects.get_or_create(name='Downloaded')
+        Event.objects.create(quote=quote, event_type=downloaded_type, event_date=timezone.now().date())
+        buffer = build_quote_pdf(quote)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="quote-{quote.pk}.pdf"'
+        return response
+
+
+class PublicInvoicePDFView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        invoice = Invoice.objects.filter(public_token=token).first()
+        if invoice is None:
+            return Response({'detail': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+        downloaded_type, _ = EventType.objects.get_or_create(name='Downloaded')
+        Event.objects.create(invoice=invoice, event_type=downloaded_type, event_date=timezone.now().date())
+        buffer = build_invoice_pdf(invoice)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="invoice-{invoice.pk}.pdf"'
+        return response
