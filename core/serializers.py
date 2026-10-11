@@ -77,3 +77,7 @@ class MembershipSerializer(serializers.ModelSerializer):
 
 class AcceptInviteSerializer(serializers.Serializer):
     token = serializers.CharField()
+
+
+class RoleUpdateSerializer(serializers.Serializer):
+    role = serializers.ChoiceField(choices=ORGANIZATION_ROLE_CHOICES)
