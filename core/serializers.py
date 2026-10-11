@@ -2,7 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
-from core.models import ORGANIZATION_ROLE_CHOICES, Customer, Membership, StaffMember
+from core.models import ORGANIZATION_ROLE_CHOICES, Customer, Membership, Product, StaffMember
 
 
 class RegisterSerializer(serializers.Serializer):
@@ -88,3 +88,9 @@ class CustomerSerializer(serializers.ModelSerializer):
         model = Customer
         fields = ['id', 'name', 'surname', 'title', 'email', 'phone', 'company', 'staff_member', 'added_date']
         read_only_fields = ['added_date']
+
+
+class ProductSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'description', 'cost_price', 'sales_price', 'margin']

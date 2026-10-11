@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Customer, Membership, Organization
+from core.models import Customer, Membership, Organization, Product
 from core.serializers import (
     AcceptInviteSerializer,
     CustomerSerializer,
@@ -20,6 +20,7 @@ from core.serializers import (
     MembershipSerializer,
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
+    ProductSerializer,
     RegisterSerializer,
     RoleUpdateSerializer,
 )
@@ -183,4 +184,16 @@ class CustomerListCreateView(generics.ListCreateAPIView):
 class CustomerDetailView(generics.RetrieveUpdateAPIView):
     queryset = Customer.objects.all()
     serializer_class = CustomerSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ProductListCreateView(generics.ListCreateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class ProductDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Product.objects.all()
+    serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
