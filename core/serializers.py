@@ -38,3 +38,13 @@ class RegisterSerializer(serializers.Serializer):
             email=validated_data['email'],
             phone=validated_data['phone'] or None,
         )
+
+
+class PasswordResetRequestSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class PasswordResetConfirmSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
