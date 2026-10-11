@@ -170,3 +170,51 @@ class Membership(models.Model):
 
     def __str__(self):
         return f'{self.email} ({self.get_role_display()}) at {self.organization}'
+
+
+# Paddle billing status values that mean the subscription currently grants
+# paid access. A scheduled cancel/pause doesn't revoke access on its own —
+# only an actual status change does.
+SUBSCRIPTION_ACCESS_STATUSES = {'active', 'trialing'}
+
+
+class BillingCustomer(models.Model):
+    """Mirrors a Paddle customer. Not named Customer — that model is a sales
+    rep's client, an unrelated concept from the organization paying for
+    SureDeal access."""
+    organization = models.OneToOneField(
+        Organization, on_delete=models.SET_NULL, null=True, blank=True, related_name='billing_customer'
+    )
+    paddle_customer_id = models.CharField(max_length=64, unique=True)
+    email = models.EmailField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return self.paddle_customer_id
+
+
+class Subscription(models.Model):
+    billing_customer = models.ForeignKey(BillingCustomer, on_delete=models.CASCADE, related_name='subscriptions')
+    paddle_subscription_id = models.CharField(max_length=64, unique=True)
+    status = models.CharField(max_length=20)
+    price_id = models.CharField(max_length=64, blank=True)
+    product_id = models.CharField(max_length=64, blank=True)
+    scheduled_change_action = models.CharField(max_length=20, blank=True, null=True)
+    scheduled_change_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def grants_access(self):
+        return self.status in SUBSCRIPTION_ACCESS_STATUSES
+
+    def __str__(self):
+        return f'{self.paddle_subscription_id} ({self.status})'
+
+
+def organization_has_paid_access(organization):
+    return Subscription.objects.filter(
+        billing_customer__organization=organization,
+        status__in=SUBSCRIPTION_ACCESS_STATUSES,
+    ).exists()
