@@ -12,10 +12,11 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Customer, Event, EventType, Membership, Organization, Product, Quote
+from core.models import Customer, Event, EventType, Invoice, Membership, Organization, Product, Quote
 from core.serializers import (
     AcceptInviteSerializer,
     CustomerSerializer,
+    InvoiceSerializer,
     InviteCreateSerializer,
     MembershipSerializer,
     PasswordResetConfirmSerializer,
@@ -222,3 +223,15 @@ class QuoteResendView(APIView):
         event_type, _ = EventType.objects.get_or_create(name='Sent')
         Event.objects.create(quote=quote, event_type=event_type, event_date=timezone.now().date())
         return Response(QuoteSerializer(quote).data)
+
+
+class InvoiceListCreateView(generics.ListCreateAPIView):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class InvoiceDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Invoice.objects.all()
+    serializer_class = InvoiceSerializer
+    permission_classes = [IsAuthenticated]

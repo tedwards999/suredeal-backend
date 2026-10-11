@@ -6,6 +6,8 @@ from core.models import (
     ORGANIZATION_ROLE_CHOICES,
     Customer,
     Event,
+    Invoice,
+    InvoiceLineItem,
     Membership,
     Product,
     Quote,
@@ -111,7 +113,7 @@ class QuoteLineItemSerializer(serializers.ModelSerializer):
         fields = ['id', 'product', 'quantity', 'price', 'discount', 'line_total']
 
 
-class QuoteEventSerializer(serializers.ModelSerializer):
+class EventSerializer(serializers.ModelSerializer):
     event_type_name = serializers.CharField(source='event_type.name', read_only=True)
 
     class Meta:
@@ -121,7 +123,7 @@ class QuoteEventSerializer(serializers.ModelSerializer):
 
 class QuoteSerializer(serializers.ModelSerializer):
     line_items = QuoteLineItemSerializer(many=True, source='quotelineitem_set', required=False)
-    events = QuoteEventSerializer(many=True, source='event_set', read_only=True)
+    events = EventSerializer(many=True, source='event_set', read_only=True)
 
     class Meta:
         model = Quote
@@ -147,4 +149,52 @@ class QuoteSerializer(serializers.ModelSerializer):
             instance.quotelineitem_set.all().delete()
             for item_data in line_items_data:
                 QuoteLineItem.objects.create(quote=instance, **item_data)
+        return instance
+
+
+class InvoiceLineItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceLineItem
+        fields = ['id', 'product', 'quantity', 'price', 'discount', 'line_total']
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    line_items = InvoiceLineItemSerializer(many=True, source='invoicelineitem_set', required=False)
+    events = EventSerializer(many=True, source='event_set', read_only=True)
+
+    class Meta:
+        model = Invoice
+        fields = [
+            'id', 'customer', 'source_quote', 'date_issued', 'due_date', 'notes',
+            'line_items', 'events',
+        ]
+        read_only_fields = ['date_issued']
+
+    def create(self, validated_data):
+        line_items_data = validated_data.pop('invoicelineitem_set', None)
+        invoice = Invoice.objects.create(**validated_data)
+        if line_items_data:
+            for item_data in line_items_data:
+                InvoiceLineItem.objects.create(invoice=invoice, **item_data)
+        elif invoice.source_quote:
+            for item in invoice.source_quote.quotelineitem_set.all():
+                InvoiceLineItem.objects.create(
+                    invoice=invoice,
+                    product=item.product,
+                    quantity=item.quantity,
+                    price=item.price,
+                    discount=item.discount,
+                    line_total=item.line_total,
+                )
+        return invoice
+
+    def update(self, instance, validated_data):
+        line_items_data = validated_data.pop('invoicelineitem_set', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        if line_items_data is not None:
+            instance.invoicelineitem_set.all().delete()
+            for item_data in line_items_data:
+                InvoiceLineItem.objects.create(invoice=instance, **item_data)
         return instance
