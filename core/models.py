@@ -40,3 +40,17 @@ class StaffMember(models.Model):
 
     def __str__(self):
         return self.user.get_full_name() or self.user.username
+
+
+class Customer(models.Model):
+    name = models.CharField(max_length=255)
+    surname = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    company = models.ForeignKey(Company, on_delete=models.CASCADE)
+    staff_member = models.ForeignKey(StaffMember, on_delete=models.CASCADE)
+    added_date = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.name} {self.surname}'
