@@ -65,3 +65,14 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Quote(models.Model):
+    customer = models.ForeignKey(Customer, on_delete=models.CASCADE)
+    date_issued = models.DateField(auto_now_add=True)
+    next_follow_up = models.DateField(auto_now_add=True)
+    expiry_date = models.DateField()
+    notes = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f'Quote #{self.pk} for {self.customer}'
