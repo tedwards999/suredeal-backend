@@ -12,7 +12,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from core.models import Customer, Membership, Organization, Product
+from core.models import Customer, Event, EventType, Membership, Organization, Product, Quote
 from core.serializers import (
     AcceptInviteSerializer,
     CustomerSerializer,
@@ -21,6 +21,7 @@ from core.serializers import (
     PasswordResetConfirmSerializer,
     PasswordResetRequestSerializer,
     ProductSerializer,
+    QuoteSerializer,
     RegisterSerializer,
     RoleUpdateSerializer,
 )
@@ -197,3 +198,27 @@ class ProductDetailView(generics.RetrieveUpdateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductSerializer
     permission_classes = [IsAuthenticated]
+
+
+class QuoteListCreateView(generics.ListCreateAPIView):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class QuoteDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Quote.objects.all()
+    serializer_class = QuoteSerializer
+    permission_classes = [IsAuthenticated]
+
+
+class QuoteResendView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        quote = Quote.objects.filter(pk=pk).first()
+        if quote is None:
+            return Response({'detail': 'Quote not found.'}, status=status.HTTP_404_NOT_FOUND)
+        event_type, _ = EventType.objects.get_or_create(name='Sent')
+        Event.objects.create(quote=quote, event_type=event_type, event_date=timezone.now().date())
+        return Response(QuoteSerializer(quote).data)
