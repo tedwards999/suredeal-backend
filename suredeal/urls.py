@@ -21,6 +21,7 @@ from core.views import (
     AcceptInviteView,
     CustomerDetailView,
     CustomerListCreateView,
+    DashboardMetricsView,
     EventListCreateView,
     InvoiceDetailView,
     InvoiceListCreateView,
@@ -59,4 +60,5 @@ urlpatterns = [
     path('api/invoices/', InvoiceListCreateView.as_view(), name='invoice_list_create'),
     path('api/invoices/<int:pk>/', InvoiceDetailView.as_view(), name='invoice_detail'),
     path('api/events/', EventListCreateView.as_view(), name='event_list_create'),
+    path('api/dashboard/metrics/', DashboardMetricsView.as_view(), name='dashboard_metrics'),
 ]

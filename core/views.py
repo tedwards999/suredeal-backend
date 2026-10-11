@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth.models import User
 from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
@@ -260,3 +262,60 @@ class EventListCreateView(generics.ListCreateAPIView):
         if limit and limit.isdigit():
             queryset = queryset[:int(limit)]
         return queryset
+
+
+class DashboardMetricsView(APIView):
+    """
+    Quote stage (Draft/Sent/Viewed/Accepted) isn't a stored field — Quote has
+    no status column — so it's derived here from the most advanced Event
+    logged against each quote.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        sent_type = EventType.objects.filter(name__iexact='Sent').first()
+        viewed_type = EventType.objects.filter(name__iexact='Viewed').first()
+        accepted_type = EventType.objects.filter(name__iexact='Accepted').first()
+
+        sent_ids = set(Event.objects.filter(event_type=sent_type).values_list('quote_id', flat=True)) if sent_type else set()
+        viewed_ids = set(Event.objects.filter(event_type=viewed_type).values_list('quote_id', flat=True)) if viewed_type else set()
+        accepted_ids = set(Event.objects.filter(event_type=accepted_type).values_list('quote_id', flat=True)) if accepted_type else set()
+
+        pipeline = {
+            'Draft': {'count': 0, 'value': Decimal('0')},
+            'Sent': {'count': 0, 'value': Decimal('0')},
+            'Viewed': {'count': 0, 'value': Decimal('0')},
+            'Accepted': {'count': 0, 'value': Decimal('0')},
+        }
+        total_revenue = Decimal('0')
+        quote_values = []
+
+        for quote in Quote.objects.all().prefetch_related('quotelineitem_set'):
+            value = sum((item.line_total for item in quote.quotelineitem_set.all()), Decimal('0'))
+            quote_values.append(value)
+            if quote.id in accepted_ids:
+                stage = 'Accepted'
+                total_revenue += value
+            elif quote.id in viewed_ids:
+                stage = 'Viewed'
+            elif quote.id in sent_ids:
+                stage = 'Sent'
+            else:
+                stage = 'Draft'
+            pipeline[stage]['count'] += 1
+            pipeline[stage]['value'] += value
+
+        quotes_sent_count = len(sent_ids | viewed_ids | accepted_ids)
+        acceptance_rate = round(len(accepted_ids) / quotes_sent_count * 100, 1) if quotes_sent_count else 0
+        avg_quote_value = round(sum(quote_values) / len(quote_values), 2) if quote_values else Decimal('0')
+
+        return Response({
+            'total_revenue': str(total_revenue),
+            'quotes_sent': quotes_sent_count,
+            'acceptance_rate': acceptance_rate,
+            'avg_quote_value': str(avg_quote_value),
+            'pipeline': [
+                {'stage': stage, 'count': data['count'], 'value': str(data['value'])}
+                for stage, data in pipeline.items()
+            ],
+        })
