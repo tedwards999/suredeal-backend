@@ -82,6 +82,7 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'knox.auth.TokenAuthentication',
     ),
+    'EXCEPTION_HANDLER': 'core.exceptions.exception_handler',
 }
 
 
