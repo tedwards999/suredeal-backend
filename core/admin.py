@@ -1,3 +1,6 @@
 from django.contrib import admin
 
-# Register your models here.
+from core.models import EventType, Region
+
+admin.site.register(EventType)
+admin.site.register(Region)
