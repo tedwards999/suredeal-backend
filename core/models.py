@@ -1,3 +1,4 @@
+from django.contrib.auth.models import User
 from django.db import models
 from django_countries.fields import CountryField
 
@@ -29,3 +30,13 @@ class Company(models.Model):
 
     def __str__(self):
         return self.company_name
+
+
+class StaffMember(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=255)
+    email = models.EmailField()
+    phone = models.CharField(max_length=20, blank=True, null=True)
+
+    def __str__(self):
+        return self.user.get_full_name() or self.user.username
