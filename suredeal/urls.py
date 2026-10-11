@@ -29,6 +29,9 @@ from core.views import (
     PasswordResetRequestView,
     ProductDetailView,
     ProductListCreateView,
+    QuoteDetailView,
+    QuoteListCreateView,
+    QuoteResendView,
     RegisterView,
 )
 
@@ -47,4 +50,7 @@ urlpatterns = [
     path('api/customers/<int:pk>/', CustomerDetailView.as_view(), name='customer_detail'),
     path('api/products/', ProductListCreateView.as_view(), name='product_list_create'),
     path('api/products/<int:pk>/', ProductDetailView.as_view(), name='product_detail'),
+    path('api/quotes/', QuoteListCreateView.as_view(), name='quote_list_create'),
+    path('api/quotes/<int:pk>/', QuoteDetailView.as_view(), name='quote_detail'),
+    path('api/quotes/<int:pk>/resend/', QuoteResendView.as_view(), name='quote_resend'),
 ]
