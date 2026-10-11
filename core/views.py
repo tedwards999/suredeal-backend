@@ -16,6 +16,7 @@ from core.models import Customer, Event, EventType, Invoice, Membership, Organiz
 from core.serializers import (
     AcceptInviteSerializer,
     CustomerSerializer,
+    EventSerializer,
     InvoiceSerializer,
     InviteCreateSerializer,
     MembershipSerializer,
@@ -235,3 +236,27 @@ class InvoiceDetailView(generics.RetrieveUpdateAPIView):
     queryset = Invoice.objects.all()
     serializer_class = InvoiceSerializer
     permission_classes = [IsAuthenticated]
+
+
+class EventListCreateView(generics.ListCreateAPIView):
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = Event.objects.all().order_by('-event_date', '-id')
+        event_type = self.request.query_params.get('event_type')
+        if event_type:
+            if event_type.isdigit():
+                queryset = queryset.filter(event_type_id=int(event_type))
+            else:
+                queryset = queryset.filter(event_type__name__iexact=event_type)
+        date_from = self.request.query_params.get('date_from')
+        if date_from:
+            queryset = queryset.filter(event_date__gte=date_from)
+        date_to = self.request.query_params.get('date_to')
+        if date_to:
+            queryset = queryset.filter(event_date__lte=date_to)
+        limit = self.request.query_params.get('limit')
+        if limit and limit.isdigit():
+            queryset = queryset[:int(limit)]
+        return queryset
