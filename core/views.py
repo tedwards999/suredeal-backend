@@ -434,6 +434,9 @@ class PaddleWebhookView(View):
             return JsonResponse({'error': 'Webhook processing failed'}, status=400)
         return JsonResponse({'received': True})
 
+    def http_method_not_allowed(self, request, *args, **kwargs):
+        return JsonResponse({'error': 'Method not allowed.'}, status=405)
+
 
 class BillingPortalView(APIView):
     permission_classes = [IsAuthenticated]
