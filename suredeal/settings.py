@@ -43,6 +43,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django_countries',
+    'rest_framework',
+    'knox',
     'core',
 ]
 
@@ -74,6 +76,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'suredeal.wsgi.application'
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'knox.auth.TokenAuthentication',
+    ),
+}
 
 
 # Database
