@@ -319,3 +319,27 @@ class DashboardMetricsView(APIView):
                 for stage, data in pipeline.items()
             ],
         })
+
+
+class PublicQuoteView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        quote = Quote.objects.filter(public_token=token).first()
+        if quote is None:
+            return Response({'detail': 'Quote not found.'}, status=status.HTTP_404_NOT_FOUND)
+        viewed_type, _ = EventType.objects.get_or_create(name='Viewed')
+        Event.objects.create(quote=quote, event_type=viewed_type, event_date=timezone.now().date())
+        return Response(QuoteSerializer(quote).data)
+
+
+class PublicInvoiceView(APIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request, token):
+        invoice = Invoice.objects.filter(public_token=token).first()
+        if invoice is None:
+            return Response({'detail': 'Invoice not found.'}, status=status.HTTP_404_NOT_FOUND)
+        viewed_type, _ = EventType.objects.get_or_create(name='Viewed')
+        Event.objects.create(invoice=invoice, event_type=viewed_type, event_date=timezone.now().date())
+        return Response(InvoiceSerializer(invoice).data)

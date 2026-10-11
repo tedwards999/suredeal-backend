@@ -33,6 +33,8 @@ from core.views import (
     PasswordResetRequestView,
     ProductDetailView,
     ProductListCreateView,
+    PublicInvoiceView,
+    PublicQuoteView,
     QuoteDetailView,
     QuoteListCreateView,
     QuoteResendView,
@@ -61,4 +63,6 @@ urlpatterns = [
     path('api/invoices/<int:pk>/', InvoiceDetailView.as_view(), name='invoice_detail'),
     path('api/events/', EventListCreateView.as_view(), name='event_list_create'),
     path('api/dashboard/metrics/', DashboardMetricsView.as_view(), name='dashboard_metrics'),
+    path('api/public/quotes/<str:token>/', PublicQuoteView.as_view(), name='public_quote'),
+    path('api/public/invoices/<str:token>/', PublicInvoiceView.as_view(), name='public_invoice'),
 ]
